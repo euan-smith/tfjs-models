@@ -27,7 +27,7 @@ import {decodeMultiplePoses} from './multi_person/decode_multiple_poses';
 import {ResNet} from './resnet';
 import {mobileNetSavedModel, resNet50SavedModel} from './saved_models';
 import {BodyPixArchitecture, BodyPixInput, BodyPixInternalResolution, BodyPixMultiplier, BodyPixOutputStride, BodyPixQuantBytes, Padding} from './types';
-import {PartSegmentation, PersonSegmentation, SemanticPartSegmentation, SemanticPersonSegmentation} from './types';
+import {PartSegmentation, PersonSegmentation, SemanticPartSegmentation, ExtendedSemanticPersonSegmentation} from './types';
 import {getInputSize, padAndResizeTo, scaleAndCropToInputTensorShape, scaleAndFlipPoses, toInputResolutionHeightAndWidth, toTensorBuffers3D} from './util';
 
 const APPLY_SIGMOID_ACTIVATION = true;
@@ -443,6 +443,7 @@ export class BodyPix {
       input: BodyPixInput, internalResolution: BodyPixInternalResolution,
       segmentationThreshold = 0.5): {
     segmentation: tf.Tensor2D,
+    segmentationScores: tf.Tensor2D,
     heatmapScores: tf.Tensor3D,
     offsets: tf.Tensor3D,
     displacementFwd: tf.Tensor3D,
@@ -457,6 +458,7 @@ export class BodyPix {
         padAndResizeTo(input, internalResolutionHeightAndWidth);
 
     const {
+      segmentationScores,
       segmentation,
       heatmapScores,
       offsets,
@@ -477,10 +479,11 @@ export class BodyPix {
           segmentLogits, [height, width], [resizedHeight, resizedWidth],
           [[padding.top, padding.bottom], [padding.left, padding.right]],
           APPLY_SIGMOID_ACTIVATION);
-
+      const segmentationScores = scaledSegmentScores.squeeze() as tf.Tensor2D;
       return {
+        segmentationScores,
         segmentation:
-            toMaskTensor(scaledSegmentScores.squeeze(), segmentationThreshold),
+            toMaskTensor(segmentationScores, segmentationThreshold),
         heatmapScores,
         offsets,
         displacementFwd,
@@ -489,6 +492,7 @@ export class BodyPix {
     });
     resized.dispose();
     return {
+      segmentationScores,
       segmentation,
       heatmapScores,
       offsets,
@@ -527,12 +531,13 @@ export class BodyPix {
   async segmentPerson(
       input: BodyPixInput,
       config: PersonInferenceConfig = PERSON_INFERENCE_CONFIG):
-      Promise<SemanticPersonSegmentation> {
+      Promise<ExtendedSemanticPersonSegmentation> {
     config = {...PERSON_INFERENCE_CONFIG, ...config};
 
     validatePersonInferenceConfig(config);
 
     const {
+      segmentationScores,
       segmentation,
       heatmapScores,
       offsets,
@@ -568,7 +573,7 @@ export class BodyPix {
     displacementFwd.dispose();
     displacementBwd.dispose();
 
-    return {height, width, data: result, allPoses: poses};
+    return {height, width, data: result, scores: segmentationScores, allPoses: poses};
   }
 
   /**

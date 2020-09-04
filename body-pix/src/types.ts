@@ -41,6 +41,14 @@ export type SemanticPersonSegmentation = {
   allPoses: Pose[],
 };
 
+export type ExtendedSemanticPersonSegmentation = {
+  data: Uint8Array,
+  scores: tf.Tensor2D,
+  width: number,
+  height: number,
+  allPoses: Pose[],
+}
+
 export type PartSegmentation = {
   data: Int32Array,
   width: number,
