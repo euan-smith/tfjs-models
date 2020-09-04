@@ -553,6 +553,8 @@ export class BodyPix {
 
     const result = await segmentation.data() as Uint8Array;
     segmentation.dispose();
+    const scores = await segmentationScores.data() as Float32Array;
+    segmentationScores.dispose();
 
     const tensorBuffers = await toTensorBuffers3D(
         [heatmapScores, offsets, displacementFwd, displacementBwd]);
@@ -573,7 +575,7 @@ export class BodyPix {
     displacementFwd.dispose();
     displacementBwd.dispose();
 
-    return {height, width, data: result, scores: segmentationScores, allPoses: poses};
+    return {height, width, data: result, scores, allPoses: poses};
   }
 
   /**
