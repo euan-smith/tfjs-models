@@ -1211,7 +1211,7 @@
         BodyPix.prototype.segmentPerson = function (input, config) {
             if (config === void 0) { config = PERSON_INFERENCE_CONFIG; }
             return __awaiter(this, void 0, void 0, function () {
-                var _a, segmentationScores, segmentation, heatmapScores, offsets, displacementFwd, displacementBwd, padding, internalResolutionHeightAndWidth, _b, height, width, result, tensorBuffers, scoresBuf, offsetsBuf, displacementsFwdBuf, displacementsBwdBuf, poses;
+                var _a, segmentationScores, segmentation, heatmapScores, offsets, displacementFwd, displacementBwd, padding, internalResolutionHeightAndWidth, _b, height, width, result, scores, tensorBuffers, scoresBuf, offsetsBuf, displacementsFwdBuf, displacementsBwdBuf, poses;
                 return __generator(this, function (_c) {
                     switch (_c.label) {
                         case 0:
@@ -1223,8 +1223,12 @@
                         case 1:
                             result = _c.sent();
                             segmentation.dispose();
-                            return [4, toTensorBuffers3D([heatmapScores, offsets, displacementFwd, displacementBwd])];
+                            return [4, segmentationScores.data()];
                         case 2:
+                            scores = _c.sent();
+                            segmentationScores.dispose();
+                            return [4, toTensorBuffers3D([heatmapScores, offsets, displacementFwd, displacementBwd])];
+                        case 3:
                             tensorBuffers = _c.sent();
                             scoresBuf = tensorBuffers[0], offsetsBuf = tensorBuffers[1], displacementsFwdBuf = tensorBuffers[2], displacementsBwdBuf = tensorBuffers[3];
                             poses = decodeMultiplePoses(scoresBuf, offsetsBuf, displacementsFwdBuf, displacementsBwdBuf, this.baseModel.outputStride, config.maxDetections, config.scoreThreshold, config.nmsRadius);
@@ -1233,7 +1237,7 @@
                             offsets.dispose();
                             displacementFwd.dispose();
                             displacementBwd.dispose();
-                            return [2, { height: height, width: width, data: result, scores: segmentationScores, allPoses: poses }];
+                            return [2, { height: height, width: width, data: result, scores: scores, allPoses: poses }];
                     }
                 });
             });
